@@ -193,8 +193,8 @@ export default function About() {
                 </div>
                 <CardContent className="text-center p-4">
                   <h3 className="text-xl font-bold text-[#2E7D32] mb-1">Tanish Bachas</h3>
-                  <p className="text-[#558B2F] mb-4">Cheer Leader</p>
-                  <p className="text-gray-600 text-sm">Relieves our stress with his cheer leading.</p>
+                  <p className="text-[#558B2F] mb-4">Chief Networking Officer</p>
+                  <p className="text-gray-600 text-sm">As the Chief Networking Officer at Agrobuizz, Tanish lead strategic relationship-building across the farming and merchant community, forging strong partnerships that drive platform adoption and trust.</p>
                 </CardContent>
               </Card>
               </motion.div>
