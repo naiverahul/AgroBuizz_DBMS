@@ -25,7 +25,7 @@ import { pageTransitionVariants, hardwareAcceleratedProps } from "@/lib/utils";
 
 function Router() {
   const [location] = useLocation();
-  
+
   // Enhanced page transition component wrappers with our AnimatedPage component
   const MotionHome = () => (
     <AnimatedPage>
@@ -44,7 +44,7 @@ function Router() {
       <About />
     </AnimatedPage>
   );
-  
+
   const MotionAdminLogin = () => (
     <AnimatedPage>
       <AdminLogin />

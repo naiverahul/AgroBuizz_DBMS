@@ -1,4 +1,10 @@
-import { createContext, ReactNode, useState, useEffect, useCallback } from 'react';
+import {
+  createContext,
+  ReactNode,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
@@ -12,6 +18,14 @@ export interface CartItem {
   imageUrl?: string;
 }
 
+interface Transaction {
+  id: number;
+  date: string;
+  totalAmount: number;
+  status: string;
+  items: { name?: string; quantity: number; price?: number }[];
+}
+
 interface CartContextType {
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
@@ -20,92 +34,115 @@ interface CartContextType {
   clearCart: () => void;
   getTotalItems: () => number;
   getSubtotal: () => number;
+  transactionHistory: Transaction[];
+  addTransaction: (tx: Transaction) => void;
 }
 
 export const CartContext = createContext<CartContextType | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [transactionHistory, setTransactionHistory] = useState<Transaction[]>(
+    []
+  );
   const { toast } = useToast();
   const { user } = useAuth();
   const [location, navigate] = useLocation();
 
-  // Load cart from localStorage on mount
+  // Load cart and transaction history from localStorage on mount
   useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
+    const savedCart = localStorage.getItem("cart");
+    const savedTransactions = localStorage.getItem("transactionHistory");
     if (savedCart) {
       try {
         setCart(JSON.parse(savedCart));
       } catch (e) {
         console.error("Failed to parse cart from localStorage", e);
-        localStorage.removeItem('cart');
+        localStorage.removeItem("cart");
+      }
+    }
+    if (savedTransactions) {
+      try {
+        setTransactionHistory(JSON.parse(savedTransactions));
+      } catch (e) {
+        console.error(
+          "Failed to parse transaction history from localStorage",
+          e
+        );
+        localStorage.removeItem("transactionHistory");
       }
     }
   }, []);
 
-  // Save cart to localStorage whenever it changes
+  // Save cart and transaction history to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
+    localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
-  // Add item to cart - requires auth
-  const addToCart = useCallback((item: CartItem) => {
-    // Check if user is logged in
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please login to add items to your cart",
-        variant: "destructive"
-      });
-      navigate("/login");
-      return;
-    }
+  useEffect(() => {
+    localStorage.setItem(
+      "transactionHistory",
+      JSON.stringify(transactionHistory)
+    );
+  }, [transactionHistory]);
 
-    setCart(prevCart => {
-      const existingItemIndex = prevCart.findIndex(cartItem => cartItem.id === item.id);
-      
-      if (existingItemIndex >= 0) {
-        // Item exists, increment quantity
-        const updatedCart = [...prevCart];
-        updatedCart[existingItemIndex] = {
-          ...updatedCart[existingItemIndex],
-          quantity: updatedCart[existingItemIndex].quantity + (item.quantity || 1)
-        };
-        return updatedCart;
-      } else {
-        // Item does not exist, add it
-        return [...prevCart, { ...item, quantity: item.quantity || 1 }];
+  const addToCart = useCallback(
+    (item: CartItem) => {
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please login to add items to your cart",
+          variant: "destructive",
+        });
+        navigate("/login");
+        return;
       }
-    });
 
-    toast({
-      title: "Added to cart",
-      description: `${item.name || "Item"} has been added to your cart`,
-    });
-  }, [user, toast, navigate]);
+      setCart((prevCart) => {
+        const existingItemIndex = prevCart.findIndex(
+          (cartItem) => cartItem.id === item.id
+        );
+        if (existingItemIndex >= 0) {
+          const updatedCart = [...prevCart];
+          updatedCart[existingItemIndex] = {
+            ...updatedCart[existingItemIndex],
+            quantity:
+              updatedCart[existingItemIndex].quantity + (item.quantity || 1),
+          };
+          return updatedCart;
+        } else {
+          return [...prevCart, { ...item, quantity: item.quantity || 1 }];
+        }
+      });
 
-  // Update item quantity
+      toast({
+        title: "Added to cart",
+        description: `${item.name || "Item"} has been added to your cart`,
+      });
+    },
+    [user, toast, navigate]
+  );
+
   const updateQuantity = useCallback((itemId: number, quantity: number) => {
     if (quantity < 1) return;
-    
-    setCart(prevCart => 
-      prevCart.map(item => 
+    setCart((prevCart) =>
+      prevCart.map((item) =>
         item.id === itemId ? { ...item, quantity } : item
       )
     );
   }, []);
 
-  // Remove item from cart
-  const removeFromCart = useCallback((itemId: number) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== itemId));
-    
-    toast({
-      title: "Item removed",
-      description: "The item has been removed from your cart",
-    });
-  }, [toast]);
+  const removeFromCart = useCallback(
+    (itemId: number) => {
+      setCart((prevCart) => prevCart.filter((item) => item.id !== itemId));
+      toast({
+        title: "Item removed",
+        description: "The item has been removed from your cart",
+      });
+    },
+    [toast]
+  );
 
-  // Clear cart
   const clearCart = useCallback(() => {
     setCart([]);
     toast({
@@ -114,17 +151,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   }, [toast]);
 
-  // Get total number of items in cart
   const getTotalItems = useCallback(() => {
     return cart.reduce((total, item) => total + item.quantity, 0);
   }, [cart]);
 
-  // Calculate subtotal if prices are available
   const getSubtotal = useCallback(() => {
-    return cart.reduce((total, item) => {
-      return total + ((item.price || 0) * item.quantity);
-    }, 0);
+    return cart.reduce(
+      (total, item) => total + (item.price || 0) * item.quantity,
+      0
+    );
   }, [cart]);
+
+  const addTransaction = useCallback((tx: Transaction) => {
+    setTransactionHistory((prev) => [...prev, tx]);
+  }, []);
 
   return (
     <CartContext.Provider
@@ -135,7 +175,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         removeFromCart,
         clearCart,
         getTotalItems,
-        getSubtotal
+        getSubtotal,
+        transactionHistory,
+        addTransaction,
       }}
     >
       {children}

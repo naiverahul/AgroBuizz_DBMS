@@ -12,20 +12,22 @@ export default function About() {
     name: "",
     email: "",
     subject: "",
-    message: ""
+    message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       setIsSubmitting(false);
@@ -37,20 +39,20 @@ export default function About() {
         name: "",
         email: "",
         subject: "",
-        message: ""
+        message: "",
       });
     }, 1500);
   };
 
   const fadeInUp = {
     hidden: { opacity: 0, y: 30 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
       transition: {
-        duration: 0.6
-      }
-    }
+        duration: 0.6,
+      },
+    },
   };
 
   const staggerContainer = {
@@ -58,9 +60,9 @@ export default function About() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2
-      }
-    }
+        staggerChildren: 0.2,
+      },
+    },
   };
 
   return (
@@ -74,9 +76,12 @@ export default function About() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-4xl md:text-5xl font-bold text-[#2E7D32] mb-6">About AgroBuizz</h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-[#2E7D32] mb-6">
+              About AgroBuizz
+            </h1>
             <p className="text-xl text-gray-700 max-w-3xl mx-auto">
-              Transforming agriculture through technology to create a more sustainable and efficient future for farmers and consumers alike.
+              Transforming agriculture through technology to create a more
+              sustainable and efficient future for farmers and consumers alike.
             </p>
           </motion.div>
         </div>
@@ -85,7 +90,7 @@ export default function About() {
       {/* Mission & Vision */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <motion.div 
+          <motion.div
             className="grid md:grid-cols-2 gap-16 items-center"
             variants={staggerContainer}
             initial="hidden"
@@ -93,12 +98,20 @@ export default function About() {
             viewport={{ once: true, margin: "-100px" }}
           >
             <motion.div variants={fadeInUp}>
-              <h2 className="text-3xl font-bold text-[#2E7D32] mb-6">Our Mission</h2>
+              <h2 className="text-3xl font-bold text-[#2E7D32] mb-6">
+                Our Mission
+              </h2>
               <p className="text-gray-700 mb-6">
-                At AgroBuizz, our mission is to revolutionize the agricultural marketplace by connecting farmers directly with buyers and merchants, eliminating middlemen, and ensuring fair prices for all participants.
+                At AgroBuizz, our mission is to revolutionize the agricultural
+                marketplace by connecting farmers directly with buyers and
+                merchants, eliminating middlemen, and ensuring fair prices for
+                all participants.
               </p>
               <p className="text-gray-700 mb-6">
-                We aim to build a comprehensive agricultural ecosystem that supports sustainable farming practices while making the buying and selling process more efficient, transparent, and profitable for everyone involved.
+                We aim to build a comprehensive agricultural ecosystem that
+                supports sustainable farming practices while making the buying
+                and selling process more efficient, transparent, and profitable
+                for everyone involved.
               </p>
               <div className="grid grid-cols-2 gap-6 mt-8">
                 <div className="bg-[#E8F5E9] p-4 rounded-lg">
@@ -119,7 +132,10 @@ export default function About() {
                 </div>
               </div>
             </motion.div>
-            <motion.div variants={fadeInUp} className="bg-[#E8F5E9] rounded-2xl p-2">
+            <motion.div
+              variants={fadeInUp}
+              className="bg-[#E8F5E9] rounded-2xl p-2"
+            >
               <div className="aspect-video bg-[#F1F8E9] rounded-xl flex items-center justify-center">
                 <div className="text-center">
                   <Leaf className="h-16 w-16 text-[#4CAF50]/30 mx-auto mb-4" />
@@ -143,11 +159,12 @@ export default function About() {
           >
             <h2 className="text-3xl font-bold text-[#2E7D32] mb-4">Our Team</h2>
             <p className="text-xl text-gray-700 max-w-3xl mx-auto">
-              Meet the passionate experts behind AgroBuizz who are committed to transforming agriculture.
+              Meet the passionate experts behind AgroBuizz who are committed to
+              transforming agriculture.
             </p>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             className="grid md:grid-cols-3 gap-8"
             variants={staggerContainer}
             initial="hidden"
@@ -162,9 +179,15 @@ export default function About() {
                   </div>
                 </div>
                 <CardContent className="text-center p-4">
-                  <h3 className="text-xl font-bold text-[#2E7D32] mb-1">Rahul Agarwal</h3>
+                  <h3 className="text-xl font-bold text-[#2E7D32] mb-1">
+                    Rahul Agarwal
+                  </h3>
                   <p className="text-[#558B2F] mb-4">Co-Founder & CEO</p>
-                  <p className="text-gray-600 text-sm">With over 15 years of experience in sustainable farming, Rahul co-founded AgroBuizz to bridge the gap between farmers and modern technology.</p>
+                  <p className="text-gray-600 text-sm">
+                    With over 15 years of experience in sustainable farming,
+                    Rahul co-founded AgroBuizz to bridge the gap between farmers
+                    and modern technology.
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -177,9 +200,17 @@ export default function About() {
                   </div>
                 </div>
                 <CardContent className="text-center p-4">
-                  <h3 className="text-xl font-bold text-[#2E7D32] mb-1">Vansh Jain</h3>
-                  <p className="text-[#558B2F] mb-4">Chief Technology Officer</p>
-                  <p className="text-gray-600 text-sm">Vansh brings her extensive background in tech innovation to help develop cutting-edge solutions for agricultural challenges.</p>
+                  <h3 className="text-xl font-bold text-[#2E7D32] mb-1">
+                    Vansh Jain
+                  </h3>
+                  <p className="text-[#558B2F] mb-4">
+                    Chief Technology Officer
+                  </p>
+                  <p className="text-gray-600 text-sm">
+                    Vansh brings her extensive background in tech innovation to
+                    help develop cutting-edge solutions for agricultural
+                    challenges.
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -192,15 +223,23 @@ export default function About() {
                   </div>
                 </div>
                 <CardContent className="text-center p-4">
-                  <h3 className="text-xl font-bold text-[#2E7D32] mb-1">Tanish Bachas</h3>
-                  <p className="text-[#558B2F] mb-4">Cheer Leader</p>
-                  <p className="text-gray-600 text-sm">Relieves our stress with his cheer leading.</p>
+                  <h3 className="text-xl font-bold text-[#2E7D32] mb-1">
+                    Tanish Bachas
+                  </h3>
+                  <p className="text-[#558B2F] mb-4">
+                    Chief Networking Officer
+                  </p>
+                  <p className="text-gray-600 text-sm">
+                    As the Chief Networking Officer at Agrobuizz, Tanish lead
+                    strategic relationship-building across the farming and
+                    merchant community, forging strong partnerships that drive
+                    platform adoption and trust.
+                  </p>
                 </CardContent>
               </Card>
-              </motion.div>
+            </motion.div>
 
-              <motion.div variants={fadeInUp}>
-                
+            <motion.div variants={fadeInUp}>
               <Card className="overflow-hidden border-[#8BC34A]/30 hover:border-[#8BC34A] transition-all">
                 <div className="aspect-square bg-[#E8F5E9] flex items-center justify-center">
                   <div className="w-24 h-24 rounded-full bg-[#8BC34A]/20 flex items-center justify-center border-2 border-[#8BC34A]">
@@ -208,9 +247,17 @@ export default function About() {
                   </div>
                 </div>
                 <CardContent className="text-center p-4">
-                  <h3 className="text-xl font-bold text-[#2E7D32] mb-1">Saksham Bansal</h3>
-                  <p className="text-[#558B2F] mb-4">Agricultural Marketplace Expert</p>
-                  <p className="text-gray-600 text-sm">Saksham's deep understanding of agricultural markets helps ensure fair pricing and efficient distribution for all AgroBuizz participants.</p>
+                  <h3 className="text-xl font-bold text-[#2E7D32] mb-1">
+                    Saksham Bansal
+                  </h3>
+                  <p className="text-[#558B2F] mb-4">
+                    Agricultural Marketplace Expert
+                  </p>
+                  <p className="text-gray-600 text-sm">
+                    Saksham's deep understanding of agricultural markets helps
+                    ensure fair pricing and efficient distribution for all
+                    AgroBuizz participants.
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -228,7 +275,9 @@ export default function About() {
             transition={{ duration: 0.6 }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-bold text-[#2E7D32] mb-4">Contact Us</h2>
+            <h2 className="text-3xl font-bold text-[#2E7D32] mb-4">
+              Contact Us
+            </h2>
             <p className="text-xl text-gray-700 max-w-3xl mx-auto">
               Have questions or feedback? We'd love to hear from you.
             </p>
@@ -241,11 +290,16 @@ export default function About() {
               whileInView="visible"
               viewport={{ once: true, margin: "-100px" }}
             >
-              <h3 className="text-xl font-semibold text-[#2E7D32] mb-6">Get in Touch</h3>
-              
+              <h3 className="text-xl font-semibold text-[#2E7D32] mb-6">
+                Get in Touch
+              </h3>
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Your Name
                   </label>
                   <Input
@@ -258,9 +312,12 @@ export default function About() {
                     className="w-full border-[#8BC34A]/50 focus:border-[#4CAF50]"
                   />
                 </div>
-                
+
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Email Address
                   </label>
                   <Input
@@ -274,9 +331,12 @@ export default function About() {
                     className="w-full border-[#8BC34A]/50 focus:border-[#4CAF50]"
                   />
                 </div>
-                
+
                 <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="subject"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Subject
                   </label>
                   <Input
@@ -289,9 +349,12 @@ export default function About() {
                     className="w-full border-[#8BC34A]/50 focus:border-[#4CAF50]"
                   />
                 </div>
-                
+
                 <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="message"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Message
                   </label>
                   <Textarea
@@ -305,7 +368,7 @@ export default function About() {
                     className="w-full border-[#8BC34A]/50 focus:border-[#4CAF50]"
                   />
                 </div>
-                
+
                 <Button
                   type="submit"
                   disabled={isSubmitting}
@@ -322,7 +385,7 @@ export default function About() {
                 </Button>
               </form>
             </motion.div>
-            
+
             <motion.div
               variants={fadeInUp}
               initial="hidden"
@@ -330,8 +393,10 @@ export default function About() {
               viewport={{ once: true, margin: "-100px" }}
               className="space-y-8"
             >
-              <h3 className="text-xl font-semibold text-[#2E7D32] mb-6">Contact Information</h3>
-              
+              <h3 className="text-xl font-semibold text-[#2E7D32] mb-6">
+                Contact Information
+              </h3>
+
               <div className="grid gap-6">
                 <div className="flex items-start">
                   <div className="bg-[#E8F5E9] p-3 rounded-full mr-4">
@@ -343,7 +408,7 @@ export default function About() {
                     <p className="text-gray-600">support@agrobuizz.com</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start">
                   <div className="bg-[#E8F5E9] p-3 rounded-full mr-4">
                     <Phone className="h-5 w-5 text-[#4CAF50]" />
@@ -354,7 +419,7 @@ export default function About() {
                     <p className="text-gray-600">+1 (555) 765-4321</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start">
                   <div className="bg-[#E8F5E9] p-3 rounded-full mr-4">
                     <MapPin className="h-5 w-5 text-[#4CAF50]" />
@@ -366,9 +431,11 @@ export default function About() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="bg-[#F1F8E9] p-6 rounded-lg border border-[#8BC34A]/30">
-                <h4 className="font-semibold text-[#2E7D32] mb-2">Business Hours</h4>
+                <h4 className="font-semibold text-[#2E7D32] mb-2">
+                  Business Hours
+                </h4>
                 <div className="space-y-1 text-gray-700">
                   <div className="flex justify-between">
                     <span>Monday - Friday</span>
