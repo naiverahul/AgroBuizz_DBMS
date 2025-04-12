@@ -7,6 +7,25 @@ import { eq } from "drizzle-orm";
 import { User } from "../shared/schema.js";
 import createMemoryStore from "memorystore";
 
+async function setupDefaultAdmin() {
+  const existing = await db.query.users.findFirst({
+    where: (u, { eq }) => eq(u.username, "admin"),
+  });
+
+  if (!existing) {
+    await db.insert(users).values({
+      username: "admin",
+      email: "admin@example.com",
+      password: "admin123", // ❗plaintext for now
+      role: "admin",
+      userType: "admin",
+    });
+    console.log("✅ Default admin user inserted.");
+  } else {
+    console.log("ℹ️ Admin already exists, skipping insert.");
+  }
+}
+
 // Properly type the Express Request user property
 declare global {
   namespace Express {
@@ -27,6 +46,7 @@ declare global {
 const MemoryStore = createMemoryStore(session);
 
 export function setupAuth(app: Express) {
+  setupDefaultAdmin();
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "your-secret-key",
     resave: false,

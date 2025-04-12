@@ -7,10 +7,8 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       <main>
-        <HeroSection />
         <FeatureSection />
         <AboutSection />
-        <WaitlistSection />
       </main>
     </div>
   );
