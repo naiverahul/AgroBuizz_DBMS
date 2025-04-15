@@ -1,11 +1,26 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, Users, ShoppingBag, AlertCircle, PlusCircle, Edit, Trash } from "lucide-react";
+import {
+  Loader2,
+  Users,
+  ShoppingBag,
+  AlertCircle,
+  PlusCircle,
+  Edit,
+  Trash,
+} from "lucide-react";
 import ComplaintsList from "@/components/ComplaintsList";
 import AnimatedPage from "@/components/AnimatedPage";
 import { useToast } from "@/hooks/use-toast";
@@ -51,13 +66,19 @@ interface Product {
 
 // Form schema for adding/editing products
 const productFormSchema = z.object({
-  name: z.string().min(2, { message: "Product name must be at least 2 characters." }),
+  name: z
+    .string()
+    .min(2, { message: "Product name must be at least 2 characters." }),
   type: z.enum(["seeds", "equipment", "fertilizer", "pesticide", "other"], {
     required_error: "Please select a product type.",
   }),
   description: z.string().optional(),
-  price: z.coerce.number().min(0.01, { message: "Price must be at least 0.01." }),
-  quantity: z.coerce.number().min(1, { message: "Quantity must be at least 1." }),
+  price: z.coerce
+    .number()
+    .min(0.01, { message: "Price must be at least 0.01." }),
+  quantity: z.coerce
+    .number()
+    .min(1, { message: "Quantity must be at least 1." }),
   classification: z.string().optional(),
 });
 
@@ -71,7 +92,7 @@ export default function VendorDashboard() {
   const [showAddProductDialog, setShowAddProductDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Form setup for adding/editing products
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
@@ -84,11 +105,11 @@ export default function VendorDashboard() {
       classification: "",
     },
   });
-  
+
   useEffect(() => {
     // Set isInit to true after first render to ensure user data is loaded
     setIsInit(true);
-    
+
     // Log for debugging
     if (user) {
       console.log("User loaded successfully:", user.userType);
@@ -96,7 +117,7 @@ export default function VendorDashboard() {
       console.log("No user data available");
     }
   }, [user]);
-  
+
   // Sample vendor products for development
   const sampleProducts: Product[] = [
     {
@@ -106,7 +127,7 @@ export default function VendorDashboard() {
       description: "High-yield organic tomato seeds",
       price: 5.99,
       quantity: 150,
-      classification: "organic"
+      classification: "organic",
     },
     {
       productId: "seed2",
@@ -115,7 +136,7 @@ export default function VendorDashboard() {
       description: "Drought-resistant corn hybrids",
       price: 8.49,
       quantity: 100,
-      classification: "hybrid"
+      classification: "hybrid",
     },
     {
       productId: "equip1",
@@ -123,25 +144,25 @@ export default function VendorDashboard() {
       type: "equipment",
       description: "Small gas-powered garden tiller",
       price: 299.99,
-      quantity: 10
-    }
+      quantity: 10,
+    },
   ];
 
   // Query vendor products
-  const { 
-    data: productsResponse, 
-    isLoading: isLoadingProducts, 
-    error: productsError 
-  } = useQuery<{success: boolean, products: Product[]}>({
+  const {
+    data: productsResponse,
+    isLoading: isLoadingProducts,
+    error: productsError,
+  } = useQuery<{ success: boolean; products: Product[] }>({
     queryKey: ["/api/vendor/products"],
     queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: isInit && !!user,
     retry: 1,
   });
-  
+
   // Extract products from response
   const products = productsResponse?.products || [];
-  
+
   // Helper function to count products by type
   const countProductsByType = (products: Product[] | undefined) => {
     if (!products) return {};
@@ -150,16 +171,17 @@ export default function VendorDashboard() {
       return acc;
     }, {} as Record<string, number>);
   };
-  
+
   // Count products by type
   const productsByType = countProductsByType(products);
-  
+
   // Total inventory value
-  const totalInventoryValue = products?.reduce(
-    (sum, product) => sum + product.price * product.quantity, 
-    0
-  ) || 0;
-  
+  const totalInventoryValue =
+    products?.reduce(
+      (sum, product) => sum + product.price * product.quantity,
+      0
+    ) || 0;
+
   // Reset form for new product entry
   const resetForm = () => {
     form.reset({
@@ -172,11 +194,11 @@ export default function VendorDashboard() {
     });
     setEditingProduct(null);
   };
-  
+
   // Create a mutation for adding products
   const createProductMutation = useMutation({
     mutationFn: async (newProduct: ProductFormValues) => {
-      const res = await apiRequest('POST', '/api/vendor/products', {
+      const res = await apiRequest("POST", "/api/vendor/products", {
         name: newProduct.name,
         type: newProduct.type,
         description: newProduct.description,
@@ -187,7 +209,7 @@ export default function VendorDashboard() {
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/vendor/products'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/vendor/products"] });
       toast({
         title: "Product added",
         description: "Your product has been added successfully.",
@@ -202,13 +224,19 @@ export default function VendorDashboard() {
         description: "There was a problem adding your product.",
         variant: "destructive",
       });
-    }
+    },
   });
-  
+
   // Create a mutation for updating products
   const updateProductMutation = useMutation({
-    mutationFn: async ({ productId, updates }: { productId: string, updates: Partial<ProductFormValues> }) => {
-      const res = await apiRequest('PUT', `/api/vendor/products/${productId}`, {
+    mutationFn: async ({
+      productId,
+      updates,
+    }: {
+      productId: string;
+      updates: Partial<ProductFormValues>;
+    }) => {
+      const res = await apiRequest("PUT", `/api/vendor/products/${productId}`, {
         name: updates.name,
         type: updates.type,
         description: updates.description,
@@ -219,7 +247,7 @@ export default function VendorDashboard() {
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/vendor/products'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/vendor/products"] });
       toast({
         title: "Product updated",
         description: "Your product has been updated successfully.",
@@ -234,17 +262,20 @@ export default function VendorDashboard() {
         description: "There was a problem updating your product.",
         variant: "destructive",
       });
-    }
+    },
   });
-  
+
   // Create a mutation for deleting products
   const deleteProductMutation = useMutation({
     mutationFn: async (productId: string) => {
-      const res = await apiRequest('DELETE', `/api/vendor/products/${productId}`);
+      const res = await apiRequest(
+        "DELETE",
+        `/api/vendor/products/${productId}`
+      );
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/vendor/products'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/vendor/products"] });
       toast({
         title: "Product deleted",
         description: "Your product has been removed.",
@@ -257,19 +288,19 @@ export default function VendorDashboard() {
         description: "There was a problem deleting your product.",
         variant: "destructive",
       });
-    }
+    },
   });
-  
+
   // Handle form submission for adding/editing a product
   const onSubmit = (values: ProductFormValues) => {
     setIsLoading(true);
-    
+
     try {
       if (editingProduct) {
         // Update existing product using mutation
         updateProductMutation.mutate({
           productId: editingProduct.productId,
-          updates: values
+          updates: values,
         });
       } else {
         // Add new product using mutation
@@ -286,16 +317,16 @@ export default function VendorDashboard() {
       setIsLoading(false);
     }
   };
-  
+
   // Open dialog for adding a new product
   const handleAddProduct = () => {
     resetForm();
     setShowAddProductDialog(true);
   };
-  
+
   // Open dialog for editing a product
   const handleEditProduct = (productId: string) => {
-    const product = products.find(p => p.productId === productId);
+    const product = products.find((p) => p.productId === productId);
     if (product) {
       setEditingProduct(product);
       form.reset({
@@ -315,14 +346,14 @@ export default function VendorDashboard() {
       });
     }
   };
-  
+
   // Handle deleting a product
   const handleDeleteProduct = (productId: string) => {
     if (confirm("Are you sure you want to delete this product?")) {
       deleteProductMutation.mutate(productId);
     }
   };
-  
+
   if (!user || user.userType !== "vendor") {
     return (
       <AnimatedPage>
@@ -337,7 +368,9 @@ export default function VendorDashboard() {
             <CardContent>
               <div className="flex flex-col items-center justify-center py-6">
                 <AlertCircle className="h-12 w-12 text-destructive mb-2" />
-                <p>Please login with a vendor account to view your dashboard.</p>
+                <p>
+                  Please login with a vendor account to view your dashboard.
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -345,24 +378,29 @@ export default function VendorDashboard() {
       </AnimatedPage>
     );
   }
-  
+
   return (
     <AnimatedPage>
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
           <h1 className="text-3xl font-bold">Vendor Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome back, {user.username}. Manage your products and customer queries.
+            Welcome back, {user.username}. Manage your products and customer
+            queries.
           </p>
         </div>
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-6"
+        >
           <TabsList className="grid grid-cols-3 w-full max-w-md">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="complaints">Complaints</TabsTrigger>
           </TabsList>
-          
+
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -385,11 +423,13 @@ export default function VendorDashboard() {
                   ) : productsError ? (
                     <div className="text-destructive">Failed to load</div>
                   ) : (
-                    <div className="text-2xl font-bold">{products?.length || 0}</div>
+                    <div className="text-2xl font-bold">
+                      {products?.length || 0}
+                    </div>
                   )}
                 </CardContent>
               </Card>
-              
+
               {/* Inventory Value Card */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -426,7 +466,7 @@ export default function VendorDashboard() {
                   )}
                 </CardContent>
               </Card>
-              
+
               {/* Customer Queries Card */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -434,9 +474,7 @@ export default function VendorDashboard() {
                     <CardTitle className="text-sm font-medium">
                       Customer Queries
                     </CardTitle>
-                    <CardDescription>
-                      Open customer complaints
-                    </CardDescription>
+                    <CardDescription>Open customer complaints</CardDescription>
                   </div>
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
@@ -445,7 +483,7 @@ export default function VendorDashboard() {
                 </CardContent>
               </Card>
             </div>
-            
+
             {/* Product Categories Overview */}
             <Card>
               <CardHeader>
@@ -466,7 +504,10 @@ export default function VendorDashboard() {
                 ) : Object.keys(productsByType).length > 0 ? (
                   <div className="space-y-2">
                     {Object.entries(productsByType).map(([type, count]) => (
-                      <div key={type} className="flex items-center justify-between">
+                      <div
+                        key={type}
+                        className="flex items-center justify-between"
+                      >
                         <span className="capitalize">{type}</span>
                         <span>{count} products</span>
                       </div>
@@ -480,7 +521,7 @@ export default function VendorDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           {/* Products Tab */}
           <TabsContent value="products" className="space-y-6">
             <Card>
@@ -513,7 +554,9 @@ export default function VendorDashboard() {
                       <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground" />
                     </div>
                     <p>You don't have any products listed yet.</p>
-                    <p className="text-sm mt-2">Click the "Add Product" button to get started.</p>
+                    <p className="text-sm mt-2">
+                      Click the "Add Product" button to get started.
+                    </p>
                   </div>
                 ) : (
                   <div className="divide-y">
@@ -523,33 +566,44 @@ export default function VendorDashboard() {
                           <div className="flex-1">
                             <h3 className="font-medium">{product.name}</h3>
                             <p className="text-sm text-muted-foreground capitalize">
-                              {product.type} {product.classification ? `• ${product.classification}` : ""}
+                              {product.type}{" "}
+                              {product.classification
+                                ? `• ${product.classification}`
+                                : ""}
                             </p>
                             {product.description && (
-                              <p className="mt-2 text-sm">{product.description}</p>
+                              <p className="mt-2 text-sm">
+                                {product.description}
+                              </p>
                             )}
                           </div>
                           <div className="flex items-center gap-4">
                             <div className="text-right">
-                              <div className="font-medium">${product.price.toFixed(2)}</div>
+                              <div className="font-medium">
+                                ${Number(product.price).toFixed(2)}
+                              </div>
                               <div className="text-sm text-muted-foreground">
                                 {product.quantity} in stock
                               </div>
                             </div>
                             <div className="flex gap-2">
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 variant="outline"
-                                onClick={() => handleEditProduct(product.productId)}
+                                onClick={() =>
+                                  handleEditProduct(product.productId)
+                                }
                               >
                                 <Edit className="h-3.5 w-3.5 mr-1" />
                                 Edit
                               </Button>
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 variant="outline"
                                 className="text-destructive hover:bg-destructive/10"
-                                onClick={() => handleDeleteProduct(product.productId)}
+                                onClick={() =>
+                                  handleDeleteProduct(product.productId)
+                                }
                               >
                                 <Trash className="h-3.5 w-3.5 mr-1" />
                                 Delete
@@ -564,27 +618,35 @@ export default function VendorDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           {/* Complaints Tab */}
           <TabsContent value="complaints" className="space-y-4">
             <ComplaintsList userType="vendor" />
           </TabsContent>
         </Tabs>
-        
+
         {/* Add/Edit Product Dialog */}
-        <Dialog open={showAddProductDialog} onOpenChange={setShowAddProductDialog}>
+        <Dialog
+          open={showAddProductDialog}
+          onOpenChange={setShowAddProductDialog}
+        >
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+              <DialogTitle>
+                {editingProduct ? "Edit Product" : "Add New Product"}
+              </DialogTitle>
               <DialogDescription>
-                {editingProduct 
-                  ? 'Update the details of your existing product.' 
-                  : 'Add details about your new product to list it for sale.'}
+                {editingProduct
+                  ? "Update the details of your existing product."
+                  : "Add details about your new product to list it for sale."}
               </DialogDescription>
             </DialogHeader>
-            
+
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 <FormField
                   control={form.control}
                   name="name"
@@ -592,20 +654,26 @@ export default function VendorDashboard() {
                     <FormItem>
                       <FormLabel>Product Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Organic Tomato Seeds" {...field} />
+                        <Input
+                          placeholder="e.g., Organic Tomato Seeds"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="type"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Product Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a product type" />
@@ -623,7 +691,7 @@ export default function VendorDashboard() {
                     </FormItem>
                   )}
                 />
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -632,13 +700,18 @@ export default function VendorDashboard() {
                       <FormItem>
                         <FormLabel>Price ($)</FormLabel>
                         <FormControl>
-                          <Input type="number" min="0.01" step="0.01" {...field} />
+                          <Input
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="quantity"
@@ -653,7 +726,7 @@ export default function VendorDashboard() {
                     )}
                   />
                 </div>
-                
+
                 <FormField
                   control={form.control}
                   name="classification"
@@ -661,16 +734,20 @@ export default function VendorDashboard() {
                     <FormItem>
                       <FormLabel>Classification (Optional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., organic, hybrid, etc." {...field} />
+                        <Input
+                          placeholder="e.g., organic, hybrid, etc."
+                          {...field}
+                        />
                       </FormControl>
                       <FormDescription>
-                        Additional categorization to help customers find your product.
+                        Additional categorization to help customers find your
+                        product.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="description"
@@ -678,35 +755,40 @@ export default function VendorDashboard() {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="Add detailed information about your product..." 
-                          className="min-h-[120px]" 
-                          {...field} 
+                        <Textarea
+                          placeholder="Add detailed information about your product..."
+                          className="min-h-[120px]"
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
                 <div className="flex justify-end space-x-2 pt-4">
-                  <Button 
-                    variant="outline" 
-                    type="button" 
+                  <Button
+                    variant="outline"
+                    type="button"
                     onClick={() => setShowAddProductDialog(false)}
                   >
                     Cancel
                   </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={isLoading || createProductMutation.isPending || updateProductMutation.isPending}
-                  >
-                    {isLoading || createProductMutation.isPending || updateProductMutation.isPending 
-                      ? 'Saving...' 
-                      : editingProduct 
-                        ? 'Update Product' 
-                        : 'Add Product'
+                  <Button
+                    type="submit"
+                    disabled={
+                      isLoading ||
+                      createProductMutation.isPending ||
+                      updateProductMutation.isPending
                     }
+                  >
+                    {isLoading ||
+                    createProductMutation.isPending ||
+                    updateProductMutation.isPending
+                      ? "Saving..."
+                      : editingProduct
+                      ? "Update Product"
+                      : "Add Product"}
                   </Button>
                 </div>
               </form>

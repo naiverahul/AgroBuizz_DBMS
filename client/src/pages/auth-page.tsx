@@ -5,9 +5,23 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
@@ -23,40 +37,43 @@ const containerVariants = {
     opacity: 1,
     transition: {
       delayChildren: 0.3,
-      staggerChildren: 0.2
-    }
-  }
+      staggerChildren: 0.2,
+    },
+  },
 };
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
   visible: {
     y: 0,
-    opacity: 1
-  }
+    opacity: 1,
+  },
 };
 
 // Form schemas
 const loginSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(4, "Password must be at least 4 characters"),
-  userType: z.enum(["customer", "vendor", "farmer"])
+  userType: z.enum(["customer", "vendor", "farmer"]),
 });
 
 type LoginValues = z.infer<typeof loginSchema>;
 
-const registerSchema = insertUserSchema.pick({
-  username: true,
-  email: true,
-  password: true,
-  userType: true
-}).extend({
-  confirmPassword: z.string(),
-  userType: z.enum(["customer", "vendor", "farmer"])
-}).refine(data => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"]
-});
+const registerSchema = insertUserSchema
+  .pick({
+    username: true,
+    email: true,
+    password: true,
+    userType: true,
+  })
+  .extend({
+    confirmPassword: z.string(),
+    userType: z.enum(["customer", "vendor", "farmer"]),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 type RegisterValues = z.infer<typeof registerSchema>;
 
@@ -65,13 +82,13 @@ export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
-  
+
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
       // Determine where to redirect based on user role
       let redirectPath = "/";
-      
+
       if (user.userType === "vendor") {
         redirectPath = "/vendor";
       } else if (user.userType === "farmer") {
@@ -79,27 +96,27 @@ export default function AuthPage() {
       } else if (user.role === "admin") {
         redirectPath = "/admin";
       }
-      
+
       toast({
         title: "Already logged in",
         description: "You are already logged in to your account",
       });
-      
+
       // Redirect to appropriate page
       setLocation(redirectPath);
     }
   }, [user, setLocation, toast]);
-  
+
   // Login form
   const loginForm = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       username: "",
       password: "",
-      userType: "customer"
-    }
+      userType: "customer",
+    },
   });
-  
+
   // Register form
   const registerForm = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
@@ -108,33 +125,33 @@ export default function AuthPage() {
       email: "",
       password: "",
       confirmPassword: "",
-      userType: "customer"
-    }
+      userType: "customer",
+    },
   });
-  
+
   // Login form submission
   const onLoginSubmit = async (values: LoginValues) => {
     setIsLoading(true);
-    
+
     try {
       const res = await apiRequest("POST", "/api/login", {
         username: values.username,
         password: values.password,
-        userType: values.userType
+        userType: values.userType,
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         toast({
           title: "Login successful",
           description: "Welcome back to AgroBuizz!",
         });
-        
+
         console.log("[AUTH] Login successful for user:", data.user?.username);
-        
+
         // Set location and reload to ensure all components update with auth state
         let redirectPath = "/";
-        
+
         if (data.user?.userType === "vendor") {
           redirectPath = "/vendor";
         } else if (data.user?.userType === "farmer") {
@@ -142,7 +159,7 @@ export default function AuthPage() {
         } else if (data.user?.role === "admin") {
           redirectPath = "/admin";
         }
-        
+
         // Set location and reload window to refresh auth state everywhere
         setLocation(redirectPath);
         setTimeout(() => {
@@ -153,7 +170,7 @@ export default function AuthPage() {
         toast({
           title: "Login failed",
           description: data.message || "Invalid username or password",
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     } catch (error) {
@@ -161,42 +178,45 @@ export default function AuthPage() {
       toast({
         title: "Login error",
         description: "An unexpected error occurred",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   // Registration form submission
   const onRegisterSubmit = async (values: RegisterValues) => {
     setIsLoading(true);
-    
+
     try {
       const { confirmPassword, ...userData } = values;
-      
+
       const res = await apiRequest("POST", "/api/register", userData);
-      
+
       // Get the response data whether success or error
       const data = await res.json();
-      
+
       if (res.ok) {
         toast({
           title: "Registration successful",
           description: "Your account has been created!",
         });
-        
-        console.log("[AUTH] Registration successful for user:", data.user?.username);
-        
+
+        console.log(
+          "[AUTH] Registration successful for user:",
+          data.user?.username
+        );
+
         // Set location and reload to ensure all components update with auth state
         let redirectPath = "/";
-        
+
         if (userData.userType === "vendor") {
           redirectPath = "/vendor";
         } else if (userData.userType === "farmer") {
           redirectPath = "/farmer";
         }
-        
+
         // Set location and reload window to refresh auth state everywhere
         setLocation(redirectPath);
         setTimeout(() => {
@@ -208,21 +228,23 @@ export default function AuthPage() {
         toast({
           title: "Registration failed",
           description: data.message || "Failed to create account",
-          variant: "destructive"
+          variant: "destructive",
         });
-        
+
         // Add specific handling for common errors
         if (data.message?.includes("Email already exists")) {
           registerForm.setError("email", {
             type: "manual",
-            message: "This email is already registered. Please use another email."
+            message:
+              "This email is already registered. Please use another email.",
           });
         }
-        
+
         if (data.message?.includes("Username already exists")) {
           registerForm.setError("username", {
             type: "manual",
-            message: "This username is already taken. Please choose another one."
+            message:
+              "This username is already taken. Please choose another one.",
           });
         }
       }
@@ -231,17 +253,17 @@ export default function AuthPage() {
       toast({
         title: "Registration error",
         description: "An unexpected error occurred. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   return (
     <div className="flex min-h-screen">
       {/* Auth form section */}
-      <motion.div 
+      <motion.div
         className="flex-1 flex items-center justify-center p-4 md:p-8"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -261,12 +283,15 @@ export default function AuthPage() {
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="register">Register</TabsTrigger>
             </TabsList>
-            
+
             {/* Login Tab */}
             <TabsContent value="login">
               <CardContent className="pt-6">
                 <Form {...loginForm}>
-                  <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                  <form
+                    onSubmit={loginForm.handleSubmit(onLoginSubmit)}
+                    className="space-y-4"
+                  >
                     <FormField
                       control={loginForm.control}
                       name="username"
@@ -274,7 +299,10 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Username</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter your username" {...field} />
+                            <Input
+                              placeholder="Enter your username"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -287,7 +315,11 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
+                            <Input
+                              type="password"
+                              placeholder="••••••••"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -306,20 +338,32 @@ export default function AuthPage() {
                               className="flex flex-col space-y-1"
                             >
                               <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="customer" id="customer" />
-                                <label htmlFor="customer" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                <RadioGroupItem
+                                  value="customer"
+                                  id="customer"
+                                />
+                                <label
+                                  htmlFor="customer"
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                >
                                   Customer
                                 </label>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="vendor" id="vendor" />
-                                <label htmlFor="vendor" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                <label
+                                  htmlFor="vendor"
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                >
                                   Vendor
                                 </label>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="farmer" id="farmer" />
-                                <label htmlFor="farmer" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                <label
+                                  htmlFor="farmer"
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                >
                                   Farmer
                                 </label>
                               </div>
@@ -329,7 +373,11 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isLoading}
+                    >
                       {isLoading ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -343,12 +391,15 @@ export default function AuthPage() {
                 </Form>
               </CardContent>
             </TabsContent>
-            
+
             {/* Register Tab */}
             <TabsContent value="register">
               <CardContent className="pt-6">
                 <Form {...registerForm}>
-                  <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+                  <form
+                    onSubmit={registerForm.handleSubmit(onRegisterSubmit)}
+                    className="space-y-4"
+                  >
                     <FormField
                       control={registerForm.control}
                       name="username"
@@ -369,7 +420,11 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="example@agrobuizz.com" {...field} />
+                            <Input
+                              type="email"
+                              placeholder="example@agrobuizz.com"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -382,7 +437,11 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
+                            <Input
+                              type="password"
+                              placeholder="••••••••"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -395,7 +454,11 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Confirm Password</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
+                            <Input
+                              type="password"
+                              placeholder="••••••••"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -414,20 +477,32 @@ export default function AuthPage() {
                               className="flex flex-col space-y-1"
                             >
                               <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="customer" id="r-customer" />
-                                <label htmlFor="r-customer" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                <RadioGroupItem
+                                  value="customer"
+                                  id="r-customer"
+                                />
+                                <label
+                                  htmlFor="r-customer"
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                >
                                   Customer
                                 </label>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="vendor" id="r-vendor" />
-                                <label htmlFor="r-vendor" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                <label
+                                  htmlFor="r-vendor"
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                >
                                   Vendor
                                 </label>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="farmer" id="r-farmer" />
-                                <label htmlFor="r-farmer" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                <label
+                                  htmlFor="r-farmer"
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                >
                                   Farmer
                                 </label>
                               </div>
@@ -437,7 +512,11 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isLoading}
+                    >
                       {isLoading ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -454,14 +533,15 @@ export default function AuthPage() {
           </Tabs>
           <CardFooter className="flex justify-center flex-col space-y-2 text-sm text-center text-muted-foreground">
             <p>
-              By continuing, you agree to AgroBuizz's Terms of Service and Privacy Policy.
+              By continuing, you agree to AgroBuizz's Terms of Service and
+              Privacy Policy.
             </p>
           </CardFooter>
         </Card>
       </motion.div>
-      
+
       {/* Hero section */}
-      <motion.div 
+      <motion.div
         className="hidden md:flex flex-1 bg-gradient-to-br from-green-900 via-green-800 to-green-700 text-white"
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -476,23 +556,34 @@ export default function AuthPage() {
           >
             <motion.div variants={itemVariants}>
               <h1 className="text-4xl font-bold tracking-tight">AgroBuizz</h1>
-              <p className="text-xl mt-2">Connecting Farmers, Vendors and Customers</p>
+              <p className="text-xl mt-2">
+                Connecting Farmers, Vendors and Customers
+              </p>
             </motion.div>
-            
+
             <motion.div variants={itemVariants} className="space-y-4">
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
                 <h3 className="font-semibold text-lg mb-2">For Customers</h3>
-                <p className="text-green-50">Purchase quality agricultural products directly from farmers and trusted vendors.</p>
+                <p className="text-green-50">
+                  Purchase quality agricultural products directly from farmers
+                  and trusted vendors.
+                </p>
               </div>
-              
+
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
                 <h3 className="font-semibold text-lg mb-2">For Vendors</h3>
-                <p className="text-green-50">Expand your reach and sell agricultural equipment, seeds, and supplies to farmers.</p>
+                <p className="text-green-50">
+                  Expand your reach and sell agricultural equipment, seeds, and
+                  supplies to farmers.
+                </p>
               </div>
-              
+
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
                 <h3 className="font-semibold text-lg mb-2">For Farmers</h3>
-                <p className="text-green-50">Sell your produce directly to customers, access equipment, and find quality seeds.</p>
+                <p className="text-green-50">
+                  Sell your produce directly to customers, access equipment, and
+                  find quality seeds.
+                </p>
               </div>
             </motion.div>
           </motion.div>

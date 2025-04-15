@@ -8,7 +8,7 @@ const ensureAdmin = (req: Request, res: Response, next: Function) => {
   if (!req.isAuthenticated() || req.user.role !== "admin") {
     return res.status(403).json({
       success: false,
-      message: "Access denied. Admin privileges required."
+      message: "Access denied. Admin privileges required.",
     });
   }
   next();
@@ -24,20 +24,30 @@ router.get("/farmers-with-crops", async (_req: Request, res: Response) => {
     res.json({ success: true, data: result });
   } catch (error) {
     console.error("Error fetching farmers with crops:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch farmers with crops" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch farmers with crops" });
   }
 });
 
 // 3. Get customers who have placed at least 3 orders
-router.get("/customers-with-multiple-orders", async (_req: Request, res: Response) => {
-  try {
-    const result = await executeRawQuery(commonQueries.getCustomersWithMultipleOrders);
-    res.json({ success: true, data: result });
-  } catch (error) {
-    console.error("Error fetching customers with multiple orders:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch customers with multiple orders" });
+router.get(
+  "/customers-with-multiple-orders",
+  async (_req: Request, res: Response) => {
+    try {
+      const result = await executeRawQuery(
+        commonQueries.getCustomersWithMultipleOrders
+      );
+      res.json({ success: true, data: result });
+    } catch (error) {
+      console.error("Error fetching customers with multiple orders:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch customers with multiple orders",
+      });
+    }
   }
-});
+);
 
 // 4. View Products by Type
 router.get("/products-by-type/:type", async (req: Request, res: Response) => {
@@ -47,7 +57,9 @@ router.get("/products-by-type/:type", async (req: Request, res: Response) => {
     res.json({ success: true, data: result });
   } catch (error) {
     console.error("Error fetching products by type:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch products by type" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch products by type" });
   }
 });
 
@@ -56,11 +68,16 @@ router.get("/products-by-price-range", async (req: Request, res: Response) => {
   try {
     const min = Number(req.query.min) || 0;
     const max = Number(req.query.max) || 1000;
-    const result = await executeRawQuery(commonQueries.getProductsByPriceRange(min, max));
+    const result = await executeRawQuery(
+      commonQueries.getProductsByPriceRange(min, max)
+    );
     res.json({ success: true, data: result });
   } catch (error) {
     console.error("Error fetching products by price range:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch products by price range" });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch products by price range",
+    });
   }
 });
 
@@ -71,21 +88,31 @@ router.get("/available-products", async (_req: Request, res: Response) => {
     res.json({ success: true, data: result });
   } catch (error) {
     console.error("Error fetching available products:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch available products" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch available products" });
   }
 });
 
 // 7. View Products by Vendor Ratings
-router.get("/products-by-vendor-ratings", async (req: Request, res: Response) => {
-  try {
-    const minRating = Number(req.query.minRating) || 4;
-    const result = await executeRawQuery(commonQueries.getProductsByVendorRatings(minRating));
-    res.json({ success: true, data: result });
-  } catch (error) {
-    console.error("Error fetching products by vendor ratings:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch products by vendor ratings" });
+router.get(
+  "/products-by-vendor-ratings",
+  async (req: Request, res: Response) => {
+    try {
+      const minRating = Number(req.query.minRating) || 4;
+      const result = await executeRawQuery(
+        commonQueries.getProductsByVendorRatings(minRating)
+      );
+      res.json({ success: true, data: result });
+    } catch (error) {
+      console.error("Error fetching products by vendor ratings:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch products by vendor ratings",
+      });
+    }
   }
-});
+);
 
 // 8. List crops for sale with specifications
 router.get("/crops-for-sale", async (_req: Request, res: Response) => {
@@ -94,7 +121,9 @@ router.get("/crops-for-sale", async (_req: Request, res: Response) => {
     res.json({ success: true, data: result });
   } catch (error) {
     console.error("Error fetching crops for sale:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch crops for sale" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch crops for sale" });
   }
 });
 
@@ -105,7 +134,10 @@ router.get("/vendor-product-counts", async (_req: Request, res: Response) => {
     res.json({ success: true, data: result });
   } catch (error) {
     console.error("Error fetching vendor product counts:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch vendor product counts" });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch vendor product counts",
+    });
   }
 });
 
@@ -116,7 +148,9 @@ router.get("/farmer-orders", async (_req: Request, res: Response) => {
     res.json({ success: true, data: result });
   } catch (error) {
     console.error("Error fetching farmer orders:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch farmer orders" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch farmer orders" });
   }
 });
 
@@ -127,7 +161,9 @@ router.get("/disputes", async (_req: Request, res: Response) => {
     res.json({ success: true, data: result });
   } catch (error) {
     console.error("Error fetching disputes:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch disputes" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch disputes" });
   }
 });
 
@@ -138,7 +174,10 @@ router.get("/highly-rated-vendors", async (_req: Request, res: Response) => {
     res.json({ success: true, data: result });
   } catch (error) {
     console.error("Error fetching highly rated vendors:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch highly rated vendors" });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch highly rated vendors",
+    });
   }
 });
 
@@ -150,7 +189,9 @@ router.get("/orders-by-year/:year?", async (req: Request, res: Response) => {
     res.json({ success: true, data: result });
   } catch (error) {
     console.error("Error fetching orders by year:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch orders by year" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch orders by year" });
   }
 });
 
@@ -161,20 +202,30 @@ router.get("/crop-sales", async (_req: Request, res: Response) => {
     res.json({ success: true, data: result });
   } catch (error) {
     console.error("Error fetching crop sales:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch crop sales" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch crop sales" });
   }
 });
 
 // 15. Query to find a farmer who is in dispute with both customer and vendor
-router.get("/farmers-with-multiple-disputes", async (_req: Request, res: Response) => {
-  try {
-    const result = await executeRawQuery(commonQueries.getFarmersWithMultipleDisputes);
-    res.json({ success: true, data: result });
-  } catch (error) {
-    console.error("Error fetching farmers with multiple disputes:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch farmers with multiple disputes" });
+router.get(
+  "/farmers-with-multiple-disputes",
+  async (_req: Request, res: Response) => {
+    try {
+      const result = await executeRawQuery(
+        commonQueries.getFarmersWithMultipleDisputes
+      );
+      res.json({ success: true, data: result });
+    } catch (error) {
+      console.error("Error fetching farmers with multiple disputes:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch farmers with multiple disputes",
+      });
+    }
   }
-});
+);
 
 // 16. Generate admin analytics report for most sold items
 router.get("/most-sold-items", async (_req: Request, res: Response) => {
@@ -183,7 +234,9 @@ router.get("/most-sold-items", async (_req: Request, res: Response) => {
     res.json({ success: true, data: result });
   } catch (error) {
     console.error("Error fetching most sold items:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch most sold items" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch most sold items" });
   }
 });
 
@@ -191,31 +244,31 @@ router.get("/most-sold-items", async (_req: Request, res: Response) => {
 router.post("/execute-query", async (req: Request, res: Response) => {
   try {
     const { query } = req.body;
-    
+
     if (!query) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "SQL query is required" 
+      return res.status(400).json({
+        success: false,
+        message: "SQL query is required",
       });
     }
-    
+
     // Check if query is a SELECT statement (prevent data modification)
-    if (!query.trim().toLowerCase().startsWith('select')) {
-      return res.status(403).json({ 
-        success: false, 
-        message: "Only SELECT queries are allowed for security reasons" 
+    if (!query.trim().toLowerCase().startsWith("select")) {
+      return res.status(403).json({
+        success: false,
+        message: "Only SELECT queries are allowed for security reasons",
       });
     }
-    
+
     const result = await executeRawQuery(query);
     res.json({ success: true, data: result });
   } catch (err) {
     const error = err as Error;
     console.error("Error executing custom query:", error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: "Failed to execute custom query",
-      error: error.message || "Unknown error"
+      error: error.message || "Unknown error",
     });
   }
 });

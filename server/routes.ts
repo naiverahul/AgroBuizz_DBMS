@@ -10,466 +10,564 @@ import adminRoutes from "./admin-routes";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
-  
+
   // Register admin routes
-  app.use('/api/admin', adminRoutes);
-  
+  app.use("/api/admin", adminRoutes);
+
   // Middleware to ensure user is authenticated
-  const ensureAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+  const ensureAuthenticated = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
     if (req.isAuthenticated()) {
       return next();
     }
     res.status(401).json({ success: false, message: "Not authenticated" });
   };
-  
+
   // Middleware to ensure user is a vendor
   const ensureVendor = (req: Request, res: Response, next: NextFunction) => {
     if (req.isAuthenticated() && req.user.userType === "vendor") {
       return next();
     }
-    res.status(403).json({ success: false, message: "Access denied. Vendor access required." });
+    res.status(403).json({
+      success: false,
+      message: "Access denied. Vendor access required.",
+    });
   };
-  
+
   // Middleware to ensure user is a farmer
   const ensureFarmer = (req: Request, res: Response, next: NextFunction) => {
     if (req.isAuthenticated() && req.user.userType === "farmer") {
       return next();
     }
-    res.status(403).json({ success: false, message: "Access denied. Farmer access required." });
+    res.status(403).json({
+      success: false,
+      message: "Access denied. Farmer access required.",
+    });
   };
-  
+
   // Middleware to ensure user is an admin
   const ensureAdmin = (req: Request, res: Response, next: NextFunction) => {
     if (req.isAuthenticated() && req.user.role === "admin") {
       return next();
     }
-    res.status(403).json({ success: false, message: "Access denied. Admin access required." });
+    res.status(403).json({
+      success: false,
+      message: "Access denied. Admin access required.",
+    });
   };
-  
+
   // User complaints API routes
-  app.post("/api/user/complaints", ensureAuthenticated, async (req: Request, res: Response) => {
-    try {
-      // At this point req.user is guaranteed to exist due to ensureAuthenticated middleware
-      const user = req.user!;
-      
-      // Validate request body
-      const validatedData = insertProductComplaintSchema.safeParse({
-        ...req.body,
-        userId: user.id, // Use the authenticated user's ID
-        status: "unsolved",
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-      
-      if (!validatedData.success) {
-        const errorMessage = fromZodError(validatedData.error).message;
-        return res.status(400).json({ message: errorMessage });
+  app.post(
+    "/api/user/complaints",
+    ensureAuthenticated,
+    async (req: Request, res: Response) => {
+      try {
+        // At this point req.user is guaranteed to exist due to ensureAuthenticated middleware
+        const user = req.user!;
+
+        // Validate request body
+        const validatedData = insertProductComplaintSchema.safeParse({
+          ...req.body,
+          userId: user.id, // Use the authenticated user's ID
+          status: "unsolved",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        if (!validatedData.success) {
+          const errorMessage = fromZodError(validatedData.error).message;
+          return res.status(400).json({ message: errorMessage });
+        }
+
+        // Create the complaint
+        const complaint = await storage.createProductComplaint(
+          validatedData.data
+        );
+
+        return res.status(201).json({
+          message: "Complaint submitted successfully",
+          complaint,
+        });
+      } catch (error) {
+        console.error("Error submitting complaint:", error);
+        return res
+          .status(500)
+          .json({ message: "Server error processing your complaint" });
       }
-      
-      // Create the complaint
-      const complaint = await storage.createProductComplaint(validatedData.data);
-      
-      return res.status(201).json({
-        message: "Complaint submitted successfully",
-        complaint
-      });
-    } catch (error) {
-      console.error("Error submitting complaint:", error);
-      return res.status(500).json({ message: "Server error processing your complaint" });
     }
-  });
-  
-  app.get("/api/user/complaints", ensureAuthenticated, async (req: Request, res: Response) => {
-    try {
-      // User is guaranteed to exist due to ensureAuthenticated middleware
-      const user = req.user!;
-      const complaints = await storage.getProductComplaints(user.id);
-      return res.status(200).json(complaints);
-    } catch (error) {
-      console.error("Error fetching user complaints:", error);
-      return res.status(500).json({ message: "Server error fetching complaints" });
+  );
+
+  app.get(
+    "/api/user/complaints",
+    ensureAuthenticated,
+    async (req: Request, res: Response) => {
+      try {
+        // User is guaranteed to exist due to ensureAuthenticated middleware
+        const user = req.user!;
+        const complaints = await storage.getProductComplaints(user.id);
+        return res.status(200).json(complaints);
+      } catch (error) {
+        console.error("Error fetching user complaints:", error);
+        return res
+          .status(500)
+          .json({ message: "Server error fetching complaints" });
+      }
     }
-  });
-  
+  );
+
   // Vendor API routes
-  app.get("/api/vendor/products", ensureVendor, async (req: Request, res: Response) => {
-    try {
-      // User is guaranteed to exist due to ensureVendor middleware
-      const user = req.user!;
-      const products = await storage.getVendorProducts(user.id.toString());
-      return res.status(200).json(products);
-    } catch (error) {
-      console.error("Error fetching vendor products:", error);
-      return res.status(500).json({ message: "Server error fetching products" });
-    }
-  });
-  
-  app.get("/api/vendor/complaints", ensureVendor, async (req: Request, res: Response) => {
-    try {
-      // User is guaranteed to exist due to ensureVendor middleware
-      const user = req.user!;
-      const complaints = await storage.getVendorComplaints(user.id.toString());
-      return res.status(200).json(complaints);
-    } catch (error) {
-      console.error("Error fetching vendor complaints:", error);
-      return res.status(500).json({ message: "Server error fetching complaints" });
-    }
-  });
-  
-  app.post("/api/vendor/complaints/:id", ensureVendor, async (req: Request, res: Response) => {
-    try {
-      // User is guaranteed to exist due to ensureVendor middleware
-      const user = req.user!;
-      const complaintId = parseInt(req.params.id);
-      const { status, response } = req.body;
-      
-      let updatedComplaint;
-      
-      // If a status update is requested
-      if (status) {
-        updatedComplaint = await storage.updateComplaintStatus(complaintId, status);
+  app.get(
+    "/api/vendor/products",
+    ensureVendor,
+    async (req: Request, res: Response) => {
+      try {
+        // User is guaranteed to exist due to ensureVendor middleware
+        const user = req.user!;
+        const products = await storage.getVendorProducts(user.id.toString());
+        return res.status(200).json(products);
+      } catch (error) {
+        console.error("Error fetching vendor products:", error);
+        return res
+          .status(500)
+          .json({ message: "Server error fetching products" });
       }
-      
-      // If a vendor response is provided
-      if (response) {
-        updatedComplaint = await storage.addVendorResponse(complaintId, response);
-      }
-      
-      if (!updatedComplaint) {
-        return res.status(404).json({ message: "Complaint not found or could not be updated" });
-      }
-      
-      return res.status(200).json({
-        message: "Complaint updated successfully",
-        complaint: updatedComplaint
-      });
-    } catch (error) {
-      console.error("Error updating complaint:", error);
-      return res.status(500).json({ message: "Server error updating complaint" });
     }
-  });
-  
+  );
+
+  app.get(
+    "/api/vendor/complaints",
+    ensureVendor,
+    async (req: Request, res: Response) => {
+      try {
+        // User is guaranteed to exist due to ensureVendor middleware
+        const user = req.user!;
+        const complaints = await storage.getVendorComplaints(
+          user.id.toString()
+        );
+        return res.status(200).json(complaints);
+      } catch (error) {
+        console.error("Error fetching vendor complaints:", error);
+        return res
+          .status(500)
+          .json({ message: "Server error fetching complaints" });
+      }
+    }
+  );
+
+  app.post(
+    "/api/vendor/complaints/:id",
+    ensureVendor,
+    async (req: Request, res: Response) => {
+      try {
+        // User is guaranteed to exist due to ensureVendor middleware
+        const user = req.user!;
+        const complaintId = parseInt(req.params.id);
+        const { status, response } = req.body;
+
+        let updatedComplaint;
+
+        // If a status update is requested
+        if (status) {
+          updatedComplaint = await storage.updateComplaintStatus(
+            complaintId,
+            status
+          );
+        }
+
+        // If a vendor response is provided
+        if (response) {
+          updatedComplaint = await storage.addVendorResponse(
+            complaintId,
+            response
+          );
+        }
+
+        if (!updatedComplaint) {
+          return res
+            .status(404)
+            .json({ message: "Complaint not found or could not be updated" });
+        }
+
+        return res.status(200).json({
+          message: "Complaint updated successfully",
+          complaint: updatedComplaint,
+        });
+      } catch (error) {
+        console.error("Error updating complaint:", error);
+        return res
+          .status(500)
+          .json({ message: "Server error updating complaint" });
+      }
+    }
+  );
+
   // API route for vendors to add products (seeds/equipment)
-  app.post("/api/vendor/products", ensureVendor, async (req: Request, res: Response) => {
-    try {
-      // User is guaranteed to exist due to ensureVendor middleware
-      const user = req.user!;
-      
-      // Create a unique productId
-      const productId = `product_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-      
-      // Add vendor ID to the product data
-      const productData = {
-        ...req.body,
-        productId,
-        vendorId: user.id.toString(),
-        createdAt: new Date()
-      };
-      
-      // Create the product
-      const newProduct = await storage.createProduct(productData);
-      
-      return res.status(201).json({
-        success: true,
-        message: "Product created successfully",
-        product: newProduct
-      });
-    } catch (error) {
-      console.error("Error creating product:", error);
-      return res.status(500).json({ 
-        success: false, 
-        message: "Server error creating product" 
-      });
+  app.post(
+    "/api/vendor/products",
+    ensureVendor,
+    async (req: Request, res: Response) => {
+      try {
+        // User is guaranteed to exist due to ensureVendor middleware
+        const user = req.user!;
+
+        // Create a unique productId
+        const productId = `product_${Date.now()}_${Math.floor(
+          Math.random() * 1000
+        )}`;
+
+        // Add vendor ID to the product data
+        const productData = {
+          ...req.body,
+          productId,
+          vendorId: user.id.toString(),
+          createdAt: new Date(),
+        };
+
+        // Create the product
+        const newProduct = await storage.createProduct(productData);
+
+        return res.status(201).json({
+          success: true,
+          message: "Product created successfully",
+          product: newProduct,
+        });
+      } catch (error) {
+        console.error("Error creating product:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Server error creating product",
+        });
+      }
     }
-  });
-  
+  );
+
   // Farmer Crop Management APIs
-  app.get("/api/farmer/crops", ensureFarmer, async (req: Request, res: Response) => {
-    try {
-      // User is guaranteed to exist due to ensureFarmer middleware
-      const user = req.user!;
-      const crops = await storage.getFarmerCrops(user.id);
-      
-      return res.status(200).json({
-        success: true,
-        crops
-      });
-    } catch (error) {
-      console.error("Error fetching farmer crops:", error);
-      return res.status(500).json({ 
-        success: false, 
-        message: "Server error fetching crops" 
-      });
+  app.get(
+    "/api/farmer/crops",
+    ensureFarmer,
+    async (req: Request, res: Response) => {
+      try {
+        // User is guaranteed to exist due to ensureFarmer middleware
+        const user = req.user!;
+        const crops = await storage.getFarmerCrops(user.id);
+
+        return res.status(200).json({
+          success: true,
+          crops,
+        });
+      } catch (error) {
+        console.error("Error fetching farmer crops:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Server error fetching crops",
+        });
+      }
     }
-  });
-  
-  app.post("/api/farmer/crops", ensureFarmer, async (req: Request, res: Response) => {
-    try {
-      // User is guaranteed to exist due to ensureFarmer middleware
-      const user = req.user!;
-      
-      // Create a unique cropId
-      const cropId = `crop_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-      
-      // Add farmer ID to the crop data
-      const cropData = {
-        ...req.body,
-        cropId,
-        farmerId: user.id
-      };
-      
-      // Create the crop
-      const newCrop = await storage.createCrop(cropData);
-      
-      return res.status(201).json({
-        success: true,
-        message: "Crop created successfully",
-        crop: newCrop
-      });
-    } catch (error) {
-      console.error("Error creating crop:", error);
-      return res.status(500).json({ 
-        success: false, 
-        message: "Server error creating crop" 
-      });
+  );
+
+  app.post(
+    "/api/farmer/crops",
+    ensureFarmer,
+    async (req: Request, res: Response) => {
+      try {
+        // User is guaranteed to exist due to ensureFarmer middleware
+        const user = req.user!;
+
+        // Create a unique cropId
+        const cropId = `crop_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+        // Add farmer ID to the crop data
+        const cropData = {
+          ...req.body,
+          cropId,
+          farmerId: user.id,
+        };
+
+        // Create the crop
+        const newCrop = await storage.createCrop(cropData);
+
+        return res.status(201).json({
+          success: true,
+          message: "Crop created successfully",
+          crop: newCrop,
+        });
+      } catch (error) {
+        console.error("Error creating crop:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Server error creating crop",
+        });
+      }
     }
-  });
-  
-  app.get("/api/farmer/crops/:cropId", ensureFarmer, async (req: Request, res: Response) => {
-    try {
-      // User is guaranteed to exist due to ensureFarmer middleware
-      const user = req.user!;
-      const cropId = req.params.cropId;
-      
-      // Get the crop
-      const crop = await storage.getCropById(cropId);
-      
-      if (!crop) {
-        return res.status(404).json({ 
-          success: false, 
-          message: "Crop not found" 
+  );
+
+  app.get(
+    "/api/farmer/crops/:cropId",
+    ensureFarmer,
+    async (req: Request, res: Response) => {
+      try {
+        // User is guaranteed to exist due to ensureFarmer middleware
+        const user = req.user!;
+        const cropId = req.params.cropId;
+
+        // Get the crop
+        const crop = await storage.getCropById(cropId);
+
+        if (!crop) {
+          return res.status(404).json({
+            success: false,
+            message: "Crop not found",
+          });
+        }
+
+        // Ensure the crop belongs to this farmer
+        if (crop.farmerId !== user.id) {
+          return res.status(403).json({
+            success: false,
+            message:
+              "Access denied. This crop does not belong to your account.",
+          });
+        }
+
+        return res.status(200).json({
+          success: true,
+          crop,
+        });
+      } catch (error) {
+        console.error("Error fetching crop details:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Server error fetching crop details",
         });
       }
-      
-      // Ensure the crop belongs to this farmer
-      if (crop.farmerId !== user.id) {
-        return res.status(403).json({ 
-          success: false, 
-          message: "Access denied. This crop does not belong to your account." 
-        });
-      }
-      
-      return res.status(200).json({
-        success: true,
-        crop
-      });
-    } catch (error) {
-      console.error("Error fetching crop details:", error);
-      return res.status(500).json({ 
-        success: false, 
-        message: "Server error fetching crop details" 
-      });
     }
-  });
-  
-  app.put("/api/farmer/crops/:cropId", ensureFarmer, async (req: Request, res: Response) => {
-    try {
-      // User is guaranteed to exist due to ensureFarmer middleware
-      const user = req.user!;
-      const cropId = req.params.cropId;
-      
-      // First check if the crop exists and belongs to this farmer
-      const existingCrop = await storage.getCropById(cropId);
-      
-      if (!existingCrop) {
-        return res.status(404).json({ 
-          success: false, 
-          message: "Crop not found" 
+  );
+
+  app.put(
+    "/api/farmer/crops/:cropId",
+    ensureFarmer,
+    async (req: Request, res: Response) => {
+      try {
+        // User is guaranteed to exist due to ensureFarmer middleware
+        const user = req.user!;
+        const cropId = req.params.cropId;
+
+        // First check if the crop exists and belongs to this farmer
+        const existingCrop = await storage.getCropById(cropId);
+
+        if (!existingCrop) {
+          return res.status(404).json({
+            success: false,
+            message: "Crop not found",
+          });
+        }
+
+        if (existingCrop.farmerId !== user.id) {
+          return res.status(403).json({
+            success: false,
+            message:
+              "Access denied. This crop does not belong to your account.",
+          });
+        }
+
+        // Update the crop
+        const updatedCrop = await storage.updateCrop(cropId, req.body);
+
+        return res.status(200).json({
+          success: true,
+          message: "Crop updated successfully",
+          crop: updatedCrop,
+        });
+      } catch (error) {
+        console.error("Error updating crop:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Server error updating crop",
         });
       }
-      
-      if (existingCrop.farmerId !== user.id) {
-        return res.status(403).json({ 
-          success: false, 
-          message: "Access denied. This crop does not belong to your account." 
-        });
-      }
-      
-      // Update the crop
-      const updatedCrop = await storage.updateCrop(cropId, req.body);
-      
-      return res.status(200).json({
-        success: true,
-        message: "Crop updated successfully",
-        crop: updatedCrop
-      });
-    } catch (error) {
-      console.error("Error updating crop:", error);
-      return res.status(500).json({ 
-        success: false, 
-        message: "Server error updating crop" 
-      });
     }
-  });
-  
-  app.delete("/api/farmer/crops/:cropId", ensureFarmer, async (req: Request, res: Response) => {
-    try {
-      // User is guaranteed to exist due to ensureFarmer middleware
-      const user = req.user!;
-      const cropId = req.params.cropId;
-      
-      // First check if the crop exists and belongs to this farmer
-      const existingCrop = await storage.getCropById(cropId);
-      
-      if (!existingCrop) {
-        return res.status(404).json({ 
-          success: false, 
-          message: "Crop not found" 
+  );
+
+  app.delete(
+    "/api/farmer/crops/:cropId",
+    ensureFarmer,
+    async (req: Request, res: Response) => {
+      try {
+        // User is guaranteed to exist due to ensureFarmer middleware
+        const user = req.user!;
+        const cropId = req.params.cropId;
+
+        // First check if the crop exists and belongs to this farmer
+        const existingCrop = await storage.getCropById(cropId);
+
+        if (!existingCrop) {
+          return res.status(404).json({
+            success: false,
+            message: "Crop not found",
+          });
+        }
+
+        if (existingCrop.farmerId !== user.id) {
+          return res.status(403).json({
+            success: false,
+            message:
+              "Access denied. This crop does not belong to your account.",
+          });
+        }
+
+        // Delete the crop
+        const success = await storage.deleteCrop(cropId);
+
+        if (!success) {
+          return res.status(500).json({
+            success: false,
+            message: "Failed to delete crop",
+          });
+        }
+
+        return res.status(200).json({
+          success: true,
+          message: "Crop deleted successfully",
+        });
+      } catch (error) {
+        console.error("Error deleting crop:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Server error deleting crop",
         });
       }
-      
-      if (existingCrop.farmerId !== user.id) {
-        return res.status(403).json({ 
-          success: false, 
-          message: "Access denied. This crop does not belong to your account." 
-        });
-      }
-      
-      // Delete the crop
-      const success = await storage.deleteCrop(cropId);
-      
-      if (!success) {
-        return res.status(500).json({ 
-          success: false, 
-          message: "Failed to delete crop" 
-        });
-      }
-      
-      return res.status(200).json({
-        success: true,
-        message: "Crop deleted successfully"
-      });
-    } catch (error) {
-      console.error("Error deleting crop:", error);
-      return res.status(500).json({ 
-        success: false, 
-        message: "Server error deleting crop" 
-      });
     }
-  });
-  
+  );
+
   // General crop search API accessible to all authenticated users
-  app.get("/api/crops/search", ensureAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const query = req.query.q as string;
-      
-      if (!query || query.trim() === '') {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Search query is required" 
+  app.get(
+    "/api/crops/search",
+    ensureAuthenticated,
+    async (req: Request, res: Response) => {
+      try {
+        const query = req.query.q as string;
+
+        if (!query || query.trim() === "") {
+          return res.status(400).json({
+            success: false,
+            message: "Search query is required",
+          });
+        }
+
+        const results = await storage.searchCrops(query);
+
+        return res.status(200).json({
+          success: true,
+          results,
+        });
+      } catch (error) {
+        console.error("Error searching crops:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Server error searching crops",
         });
       }
-      
-      const results = await storage.searchCrops(query);
-      
-      return res.status(200).json({
-        success: true,
-        results
-      });
-    } catch (error) {
-      console.error("Error searching crops:", error);
-      return res.status(500).json({ 
-        success: false, 
-        message: "Server error searching crops" 
-      });
     }
-  });
-  
+  );
+
   // Market prices API
-  app.get("/api/market/prices", ensureAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const category = req.query.category as string;
-      const prices = await generateMarketPrices(category);
-      
-      return res.status(200).json({
-        success: true,
-        prices
-      });
-    } catch (error) {
-      console.error("Error fetching market prices:", error);
-      return res.status(500).json({ 
-        success: false, 
-        message: "Server error fetching market prices" 
-      });
+  app.get(
+    "/api/market/prices",
+    ensureAuthenticated,
+    async (req: Request, res: Response) => {
+      try {
+        const category = req.query.category as string;
+        const prices = await generateMarketPrices(category);
+
+        return res.status(200).json({
+          success: true,
+          prices,
+        });
+      } catch (error) {
+        console.error("Error fetching market prices:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Server error fetching market prices",
+        });
+      }
     }
-  });
+  );
 
   const httpServer = createServer(app);
-  
+
   // Set up WebSocket server for real-time search suggestions and updates
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-  
+  const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
+
   // Keep track of connected clients for broadcasting
   const clients = new Set<WebSocket>();
-  
-  wss.on('connection', (ws) => {
-    console.log('WebSocket client connected');
+
+  wss.on("connection", (ws) => {
+    console.log("WebSocket client connected");
     clients.add(ws);
-    
+
     // Send initial connection message
     if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ 
-        type: 'connection_established',
-        message: 'Connected to AgroBuizz real-time service'
-      }));
+      ws.send(
+        JSON.stringify({
+          type: "connection_established",
+          message: "Connected to AgroBuizz real-time service",
+        })
+      );
     }
-    
-    ws.on('message', async (message) => {
+
+    ws.on("message", async (message) => {
       try {
         const data = JSON.parse(message.toString());
-        
+
         // Handle different message types
-        if (data.type === 'search') {
+        if (data.type === "search") {
           // Send back search suggestions based on the query
           const suggestions = await handleSearchQuery(data.query);
           if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({
-              type: 'search_results',
-              results: suggestions
-            }));
+            ws.send(
+              JSON.stringify({
+                type: "search_results",
+                results: suggestions,
+              })
+            );
           }
-        } 
-        else if (data.type === 'cart_update') {
+        } else if (data.type === "cart_update") {
           // Broadcast cart update to all clients except sender (for multi-device sync)
           if (data.userId) {
-            clients.forEach(client => {
+            clients.forEach((client) => {
               if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({
-                  type: 'cart_sync',
-                  userId: data.userId,
-                  cartItems: data.cartItems
-                }));
+                client.send(
+                  JSON.stringify({
+                    type: "cart_sync",
+                    userId: data.userId,
+                    cartItems: data.cartItems,
+                  })
+                );
               }
             });
           }
-        }
-        else if (data.type === 'market_price_request') {
+        } else if (data.type === "market_price_request") {
           // Get real-time market prices for products from database
           const products = await generateMarketPrices(data.categoryId);
           if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({
-              type: 'market_price_update',
-              products
-            }));
+            ws.send(
+              JSON.stringify({
+                type: "market_price_update",
+                products,
+              })
+            );
           }
         }
       } catch (error) {
-        console.error('[WEBSOCKET ERROR] Error processing message:', error);
+        console.error("[WEBSOCKET ERROR] Error processing message:", error);
       }
     });
-    
-    ws.on('close', () => {
-      console.log('WebSocket client disconnected');
+
+    ws.on("close", () => {
+      console.log("WebSocket client disconnected");
       clients.delete(ws);
     });
   });
@@ -480,26 +578,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 // Helper function to generate search suggestions from database products
 async function handleSearchQuery(query: string): Promise<string[]> {
   console.log(`[SEARCH] Searching database for: "${query}"`);
-  
-  if (!query || query.trim() === '') return [];
-  
+
+  if (!query || query.trim() === "") return [];
+
   try {
     // Get matching products from the database
     const matchingProducts = await storage.searchProducts(query);
-    console.log(`[SEARCH] Found ${matchingProducts.length} matching products in database`);
-    
+    console.log(
+      `[SEARCH] Found ${matchingProducts.length} matching products in database`
+    );
+
     // Extract product names
-    const suggestions = matchingProducts.map(product => product.name);
+    const suggestions = matchingProducts.map((product) => product.name);
     return suggestions;
   } catch (error) {
-    console.error('[SEARCH ERROR] Database search failed:', error);
+    console.error("[SEARCH ERROR] Database search failed:", error);
     return [];
   }
 }
 
 // Function to generate market prices from database products
 // Define the availability options
-type AvailabilityType = 'high' | 'medium' | 'low';
+type AvailabilityType = "high" | "medium" | "low";
 
 interface ProductPrice {
   id: number;
@@ -509,86 +609,194 @@ interface ProductPrice {
   availability: AvailabilityType;
 }
 
-async function generateMarketPrices(categoryId?: string): Promise<ProductPrice[]> {
-  console.log(`[MARKET] Fetching products from database for category: ${categoryId || 'mixed'}`);
-  
+async function generateMarketPrices(
+  categoryId?: string
+): Promise<ProductPrice[]> {
+  console.log(
+    `[MARKET] Fetching products from database for category: ${
+      categoryId || "mixed"
+    }`
+  );
+
   try {
     // Get products from database
     const allProducts = await storage.getProducts();
-    console.log(`[MARKET] Retrieved ${allProducts.length} products from database`);
-    
+    console.log(
+      `[MARKET] Retrieved ${allProducts.length} products from database`
+    );
+
     if (allProducts.length === 0) {
-      console.log('[MARKET] No products found in database, generating sample data');
+      console.log(
+        "[MARKET] No products found in database, generating sample data"
+      );
       // Generate sample market prices when database is empty
-      const high: AvailabilityType = 'high';
-      const medium: AvailabilityType = 'medium';
-      const low: AvailabilityType = 'low';
-      
+      const high: AvailabilityType = "high";
+      const medium: AvailabilityType = "medium";
+      const low: AvailabilityType = "low";
+
       return [
-        { id: 1, name: 'Organic Wheat Seeds', price: 24.99, change: 2.3, availability: high },
-        { id: 2, name: 'Tomato Seedlings', price: 8.50, change: -1.5, availability: medium },
-        { id: 3, name: 'Corn Seeds (Premium)', price: 15.75, change: 0.8, availability: high },
-        { id: 4, name: 'Rice Seeds', price: 12.25, change: -0.5, availability: high },
-        { id: 5, name: 'Onion Sets', price: 5.99, change: 1.2, availability: medium },
-        { id: 6, name: 'Tractor (Small)', price: 12500, change: -2.1, availability: low },
-        { id: 7, name: 'Irrigation System', price: 850, change: 3.4, availability: medium },
-        { id: 8, name: 'Fresh Tomatoes', price: 3.99, change: 4.2, availability: high },
-        { id: 9, name: 'Organic Apples', price: 4.50, change: -1.8, availability: medium },
-        { id: 10, name: 'Fertilizer (20kg)', price: 35.00, change: 1.5, availability: high }
-      ].filter(item => {
+        {
+          id: 1,
+          name: "Organic Wheat Seeds",
+          price: 24.99,
+          change: 2.3,
+          availability: high,
+        },
+        {
+          id: 2,
+          name: "Tomato Seedlings",
+          price: 8.5,
+          change: -1.5,
+          availability: medium,
+        },
+        {
+          id: 3,
+          name: "Corn Seeds (Premium)",
+          price: 15.75,
+          change: 0.8,
+          availability: high,
+        },
+        {
+          id: 4,
+          name: "Rice Seeds",
+          price: 12.25,
+          change: -0.5,
+          availability: high,
+        },
+        {
+          id: 5,
+          name: "Onion Sets",
+          price: 5.99,
+          change: 1.2,
+          availability: medium,
+        },
+        {
+          id: 6,
+          name: "Tractor (Small)",
+          price: 12500,
+          change: -2.1,
+          availability: low,
+        },
+        {
+          id: 7,
+          name: "Irrigation System",
+          price: 850,
+          change: 3.4,
+          availability: medium,
+        },
+        {
+          id: 8,
+          name: "Fresh Tomatoes",
+          price: 3.99,
+          change: 4.2,
+          availability: high,
+        },
+        {
+          id: 9,
+          name: "Organic Apples",
+          price: 4.5,
+          change: -1.8,
+          availability: medium,
+        },
+        {
+          id: 10,
+          name: "Fertilizer (20kg)",
+          price: 35.0,
+          change: 1.5,
+          availability: high,
+        },
+      ].filter((item) => {
         // Filter by category if specified
         if (!categoryId) return true;
-        if (categoryId === 'seeds' && (item.name.toLowerCase().includes('seed') || item.name.toLowerCase().includes('seedling'))) return true;
-        if (categoryId === 'equipment' && (item.name.toLowerCase().includes('tractor') || item.name.toLowerCase().includes('system'))) return true;
-        if (categoryId === 'produce' && (item.name.toLowerCase().includes('tomato') || item.name.toLowerCase().includes('apple'))) return true;
+        if (
+          categoryId === "seeds" &&
+          (item.name.toLowerCase().includes("seed") ||
+            item.name.toLowerCase().includes("seedling"))
+        )
+          return true;
+        if (
+          categoryId === "equipment" &&
+          (item.name.toLowerCase().includes("tractor") ||
+            item.name.toLowerCase().includes("system"))
+        )
+          return true;
+        if (
+          categoryId === "produce" &&
+          (item.name.toLowerCase().includes("tomato") ||
+            item.name.toLowerCase().includes("apple"))
+        )
+          return true;
         return false;
       });
     }
-    
+
     // Filter by category if specified
     let filteredProducts = [...allProducts];
     if (categoryId) {
-      filteredProducts = allProducts.filter(product => {
-        if (categoryId === 'seeds' && product.type.toLowerCase().includes('seed')) {
+      filteredProducts = allProducts.filter((product) => {
+        if (
+          categoryId === "seeds" &&
+          product.type.toLowerCase().includes("seed")
+        ) {
           return true;
-        } else if (categoryId === 'equipment' && product.type.toLowerCase().includes('equipment')) {
+        } else if (
+          categoryId === "equipment" &&
+          product.type.toLowerCase().includes("equipment")
+        ) {
           return true;
-        } else if (categoryId === 'produce' && product.type.toLowerCase().includes('produce')) {
+        } else if (
+          categoryId === "produce" &&
+          product.type.toLowerCase().includes("produce")
+        ) {
           return true;
         }
         return false;
       });
-      console.log(`[MARKET] Filtered to ${filteredProducts.length} products for category: ${categoryId}`);
+      console.log(
+        `[MARKET] Filtered to ${filteredProducts.length} products for category: ${categoryId}`
+      );
     }
-    
+
     // Limit to a reasonable number of products (max 10)
     const limitedProducts = filteredProducts.slice(0, 10);
-    
+
     // Generate availability and price fluctuations
-    const availabilityOptions: ('high' | 'medium' | 'low')[] = ['high', 'medium', 'low'];
-    
-    return limitedProducts.map(product => {
+    const availabilityOptions: ("high" | "medium" | "low")[] = [
+      "high",
+      "medium",
+      "low",
+    ];
+
+    return limitedProducts.map((product) => {
       // Create a numeric ID from the string product ID
-      const numericId = parseInt(product.productId.replace(/\D/g, '')) || Math.floor(Math.random() * 1000);
-      
+      const numericId =
+        parseInt(product.productId.replace(/\D/g, "")) ||
+        Math.floor(Math.random() * 1000);
+
       // Generate random price fluctuation between -8% and +8%
       const fluctuation = (Math.random() * 16 - 8) / 100;
-      const basePrice = typeof product.price === 'number' ? product.price : parseFloat(product.price as string) || 10.0;
+      const basePrice =
+        typeof product.price === "number"
+          ? product.price
+          : parseFloat(product.price as string) || 10.0;
       const newPrice = basePrice * (1 + fluctuation);
-      
+
       // Random availability
-      const availability = availabilityOptions[Math.floor(Math.random() * availabilityOptions.length)];
-      
+      const availability =
+        availabilityOptions[
+          Math.floor(Math.random() * availabilityOptions.length)
+        ];
+
       return {
         id: numericId,
         name: product.name,
         price: parseFloat(newPrice.toFixed(2)),
         change: parseFloat((fluctuation * 100).toFixed(2)),
-        availability
+        availability,
       };
     });
   } catch (error) {
-    console.error('[MARKET ERROR] Failed to generate market prices:', error);
+    console.error("[MARKET ERROR] Failed to generate market prices:", error);
     return [];
   }
 }
